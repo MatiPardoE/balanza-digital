@@ -5,6 +5,12 @@ doc/html
 .metadata/
 
 
+#ignore directories
+ejemplo_adc_int/
+ejemplo_adc_polling/
+
+
+
 
 #ignore files
 *.cproject
