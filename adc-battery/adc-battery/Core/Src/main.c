@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "adc_filter.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,9 +32,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TICKS_ADC_MS		(60000)
+#define TICKS_ADC_MS		(10000)	//Tomo muestras cada 100 mS
 #define DELAY_ADC			(64)
 #define demora_software(X)	{for(int i=0; i<(X); i++){}}
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -59,7 +60,8 @@ static void MX_ADC1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint16_t bat_avg;
+uint8_t charge_por = 100;
 /* USER CODE END 0 */
 
 /**
@@ -69,7 +71,13 @@ static void MX_ADC1_Init(void);
 int main(void) {
 	/* USER CODE BEGIN 1 */
 	uint32_t ticks_adc;
+	//Borrar a futuro
 	uint16_t cuentas_adc;
+	//
+
+	uint8_t bat_index;
+	uint32_t bat_buffer[bat_len];
+	uint32_t bat_acc ;
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -94,6 +102,7 @@ int main(void) {
 	/* USER CODE BEGIN 2 */
 	ticks_adc = HAL_GetTick();
 	HAL_ADCEx_Calibration_Start(&hadc1);
+	Inicializar_avg_movil(bat_buffer, &bat_index, bat_len, &bat_acc);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -109,6 +118,8 @@ int main(void) {
 
 			HAL_ADC_Stop(&hadc1);
 			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+			bat_avg = Set_avg_movil(cuentas_adc, bat_buffer, &bat_index, bat_len, &bat_acc);
+			charge_por = Get_porcentage_bat(&bat_avg);
 			/* USER CODE BEGIN 3 */
 		}
 	}
@@ -226,6 +237,7 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
+
 
 /* USER CODE END 4 */
 
