@@ -8,6 +8,9 @@ doc/html
 #ignore directories
 ejemplo_adc_int/
 ejemplo_adc_polling/
+keypad/
+oled_ssd1306/
+registros_backup/
 
 
 
