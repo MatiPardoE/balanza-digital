@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,6 +69,18 @@ uint16_t recibir(uint8_t *b, uint16_t len)
 	return len;
 }
 
+void serial_tx_num(uint16_t num){
+	char buf[8];
+	sprintf(buf, "<%04d>", num);
+	CDC_Transmit_FS((uint8_t*)buf, strlen(buf));
+}
+
+void serial_tx_cmd(const char* cmd){
+	char buf[4];
+	sprintf(buf, "<%s>", cmd);
+	CDC_Transmit_FS((uint8_t*)buf, strlen(buf));
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -110,10 +123,22 @@ int main(void)
   {
 	  if(flagtx)
 	  {
-		  int len = flagtx;
+		  //int len = flagtx;
 		  flagtx=0;
 		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		  CDC_Transmit_FS(buftx, len);
+		  HAL_Delay(2000);
+		  serial_tx_num(3000);
+		  HAL_Delay(2000);
+		  serial_tx_num(300);
+		  HAL_Delay(2000);
+		  serial_tx_num(30);
+		  HAL_Delay(2000);
+		  serial_tx_num(3);
+		  HAL_Delay(2000);
+		  serial_tx_cmd("L");
+		  HAL_Delay(2000);
+		  serial_tx_cmd("D");
+		  //CDC_Transmit_FS(buftx, len);
 	  }
     /* USER CODE END WHILE */
 
