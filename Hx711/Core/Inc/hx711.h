@@ -24,7 +24,8 @@
 #define DOUT_READ			HAL_GPIO_ReadPin(PD_DT_PORT, PD_DT_PIN)
 #define DOUT_SET_HIGH		HAL_GPIO_WritePin(PD_DT_PORT, PD_DT_PIN,GPIO_PIN_SET)
 
-	uint32_t offset;
+
+	extern void delay_us (uint32_t us);
 
 	// check if HX711 is ready
 	// from the datasheet: When output data is not ready for retrieval, digital output pin DOUT is high. Serial clock
@@ -33,16 +34,23 @@
 
 	uint32_t HX711_get_offset(void);
 
+	void HX711_set_scale_g(float value_scale_g);
 
 	// waits for the chip to be ready and returns a reading
 	int32_t HX711_read_raw(void);
 
 	int32_t HX711_read_average_raw(uint8_t prom);
 
-	void HX711_calibracion(void);
+	void HX711_tare(void);
 
 	int32_t HX711_read_average_value(uint8_t prom);
 
+	int32_t HX711_read_g();
 
+	double KALMAN(int32_t U);
+
+	float HX711_calib(uint32_t calib_weight);
+
+	void HX711_calib_harcodeado(void);
 
 #endif /* INC_HX711_H_ */

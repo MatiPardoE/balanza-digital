@@ -8,9 +8,41 @@
 
 #include "hx711.h"
 
+uint32_t offset;
+float scale_g;
 
+double KALMAN(int32_t U){
+	  static const double R = 10;
+	  static const double H = 1.00; // Especie de controlador de KALMAN
+	  static double Q=10;
+	  static double P=15;
+	  static double U_hat=0;
+	  static double Kg=0;
 
-void HX711_calibracion(void){
+	  Kg=P*H/(H*P*H+R);
+	  U_hat=U_hat+Kg*(U-H*U_hat);
+
+	  P=(1-Kg*H)*P+Q;
+
+	  return U_hat;
+}
+
+void HX711_calib_harcodeado(void){
+	scale_g=0.00074912;
+}
+
+float HX711_calib(uint32_t calib_weight){
+
+	scale_g = calib_weight / HX711_read_average_value(10);
+
+	return scale_g;
+}
+
+void HX711_set_scale_g(float value_scale_g){
+	scale_g = value_scale_g;
+}
+
+void HX711_tare(void){
 	PD_SCK_SET_LOW;
 	HAL_Delay(1);
 	HX711_read_average_raw(10);
@@ -83,4 +115,19 @@ int32_t HX711_read_average_raw(uint8_t prom){
 
 int32_t HX711_read_average_value(uint8_t prom){
 	return (HX711_read_average_raw(prom)-offset);
+}
+
+int32_t HX711_read_g(){
+	uint8_t i=0;
+	int32_t value_unscaled,current_weight_g;
+	double value_kalman,sum_value_kalman=0;
+
+	for(i=0;i<4;i++){
+		value_unscaled = HX711_read_average_value(3);
+		value_kalman = KALMAN(value_unscaled);
+		sum_value_kalman += value_kalman;
+	}
+	current_weight_g = (sum_value_kalman/4)*scale_g;//Divido por 4 para el prom
+
+	return current_weight_g;
 }

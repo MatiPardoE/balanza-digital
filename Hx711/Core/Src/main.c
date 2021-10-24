@@ -43,10 +43,7 @@
 TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN PV */
-int32_t value_test;
-float value_mg;
-const float scale_mg=0.73; // 7300/100000
-double value_kalman;
+int32_t gramos;
 
 /* USER CODE END PV */
 
@@ -56,7 +53,6 @@ static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
 void delay_us(uint32_t us);
-double KALMAN(int32_t U);
 
 /* USER CODE END PFP */
 
@@ -78,7 +74,8 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+
+	HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -95,11 +92,9 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  HX711_calibracion();
+  HX711_tare();
 
-
-
-
+  HX711_calib_harcodeado();
 
   /* USER CODE END 2 */
 
@@ -107,13 +102,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  value_test=HX711_read_average_value(5);
-	  value_kalman=KALMAN(value_test);
-	  if(value_kalman<0){
-		  value_mg=0;
-	  }else{
-		  value_mg=value_kalman*scale_mg;
-	  }
+	  gramos=HX711_read_g();
+
+
 	  /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -245,21 +236,6 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-double KALMAN(int32_t U){
-	  static const double R = 10;
-	  static const double H = 1.00; // Especie de controlador de KALMAN
-	  static double Q=10;
-	  static double P=15;
-	  static double U_hat=0;
-	  static double Kg=0;
-
-	  Kg=P*H/(H*P*H+R);
-	  U_hat=U_hat+Kg*(U-H*U_hat);
-
-	  P=(1-Kg*H)*P+Q;
-
-	  return U_hat;
-}
 
 void delay_us (uint32_t us)
 {
