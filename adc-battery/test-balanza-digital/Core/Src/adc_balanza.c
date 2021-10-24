@@ -132,7 +132,7 @@ void Measure_battery(void) {
 		cuentas_adc = HAL_ADC_GetValue(&hadc1);
 
 		HAL_ADC_Stop(&hadc1);
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		//HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 		bat_avg = Set_avg_movil(cuentas_adc, bat_buffer, &bat_index,
 		bat_len, &bat_acc);
 		charge_por = Check_porcentage(&bat_avg);

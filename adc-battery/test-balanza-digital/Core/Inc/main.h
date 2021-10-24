@@ -32,9 +32,15 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 #include "adc_balanza.h"
 #include "debounce.h"
 #include "keypad_balanza.h"
+//#include "bitmap.h"
+#include "fonts.h"
+#include "ssd1306.h"
+#include "oled_balanza.h"
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -56,7 +62,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+void Init_balanza(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -75,6 +81,9 @@ void Error_Handler(void);
 #define COL_3_Pin GPIO_PIN_7
 #define COL_3_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
+#define ESPERA_BIENVENIDA 5000	//Espero 5000 ms
+
+enum state {BIENVENIDA, MENU, PESAJE, CALIBRAR, TARAR, PRECIO, PC};
 
 /* USER CODE END Private defines */
 

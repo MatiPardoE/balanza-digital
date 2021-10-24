@@ -9,7 +9,8 @@
 #define INC_ADC_FILTER_H_
 
 #define bat_len 			10
-#define TICKS_ADC_MS		(10000)	//Tomo muestras cada 10_000 mS
+//#define TICKS_ADC_MS		(10000)	//Tomo muestras cada 10_000 mS
+#define TICKS_ADC_MS		(5000)	//Tomo muestras cada 5_000 mS
 #define DELAY_ADC			(64)
 #define demora_software(X)	{for(int i=0; i<(X); i++){}}
 

@@ -25,6 +25,10 @@
 #include "adc_balanza.h"
 #include "debounce.h"
 #include "keypad_balanza.h"
+//#include "bitmap.h"
+#include "fonts.h"
+#include "ssd1306.h"
+#include "oled_balanza.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,6 +48,10 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 
+I2C_HandleTypeDef hi2c1;
+
+RTC_HandleTypeDef hrtc;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -52,12 +60,23 @@ ADC_HandleTypeDef hadc1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_I2C1_Init(void);
+static void MX_RTC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// START VARIABLE
+uint32_t tick_main;
+// END VARIABLE
+
+// START VARIABLE SRAM
+float escala_sram;
+uint32_t offset_sram;
+// END VARIABLE SRAM
 
 // START VARIABLE KEYPAD
 extern debounce_t deb_col_1; 	//! Variable para inicializar
@@ -86,7 +105,7 @@ extern uint32_t bat_acc;				//! Usada para avg movl
  */
 int main(void) {
 	/* USER CODE BEGIN 1 */
-
+	enum state s = BIENVENIDA;
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -108,27 +127,66 @@ int main(void) {
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_ADC1_Init();
+	MX_I2C1_Init();
+	MX_RTC_Init();
 	/* USER CODE BEGIN 2 */
-	debounce_init(&deb_col_1, 1, DEBOUNCE_TICKS);
-	debounce_init(&deb_col_2, 1, DEBOUNCE_TICKS);
-	debounce_init(&deb_col_3, 1, DEBOUNCE_TICKS);
+	Init_balanza();
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
-	ticks_adc = HAL_GetTick();
-	HAL_ADCEx_Calibration_Start(&hadc1);
-	Inicializar_avg_movil(bat_buffer, &bat_index, bat_len, &bat_acc);
+	ticks_adc = HAL_GetTick();					// Variable para ADC
+
+	/* Lectura calibraciones anteriores	*/
+	escala_sram = HAL_RTCEx_BKUPRead(&hrtc, 1);
+	offset_sram = HAL_RTCEx_BKUPRead(&hrtc, 2);
+
+	tick_main = HAL_GetTick();
+	printoled_start();
+
 	while (1) {
+
+		switch (s) {
+			Measure_battery(); // Toma muestras cada 5s y lo promedia
+			case BIENVENIDA:
+				if ((HAL_GetTick() - tick_main) >= ESPERA_BIENVENIDA) {
+					s = PESAJE;
+				}
+				break;
+
+			case MENU:
+
+				break;
+
+			case PESAJE:
+
+				break;
+
+			case CALIBRAR:
+
+				break;
+
+			case TARAR:
+
+				break;
+
+			case PRECIO:
+
+				break;
+
+			case PC:
+
+				break;
+
+			default:
+				break;
+
+		}
+
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
-		Measure_battery();
-		key = read_keypad();
-		if (key)
-			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 	}
-	//UNUSED(cuentas_adc);
 	/* USER CODE END 3 */
 }
 
@@ -144,10 +202,15 @@ void SystemClock_Config(void) {
 	/** Initializes the RCC Oscillators according to the specified parameters
 	 * in the RCC_OscInitTypeDef structure.
 	 */
-	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI
+			| RCC_OSCILLATORTYPE_HSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+	RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
 	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+	RCC_OscInitStruct.LSIState = RCC_LSI_ON;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
 	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
 		Error_Handler();
 	}
@@ -155,16 +218,17 @@ void SystemClock_Config(void) {
 	 */
 	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
 			| RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
-	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) {
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
 		Error_Handler();
 	}
-	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-	PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV2;
+	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC | RCC_PERIPHCLK_ADC;
+	PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+	PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
 	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
 		Error_Handler();
 	}
@@ -213,6 +277,66 @@ static void MX_ADC1_Init(void) {
 }
 
 /**
+ * @brief I2C1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_I2C1_Init(void) {
+
+	/* USER CODE BEGIN I2C1_Init 0 */
+
+	/* USER CODE END I2C1_Init 0 */
+
+	/* USER CODE BEGIN I2C1_Init 1 */
+
+	/* USER CODE END I2C1_Init 1 */
+	hi2c1.Instance = I2C1;
+	hi2c1.Init.ClockSpeed = 400000;
+	hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+	hi2c1.Init.OwnAddress1 = 0;
+	hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+	hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+	hi2c1.Init.OwnAddress2 = 0;
+	hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+	hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+	if (HAL_I2C_Init(&hi2c1) != HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN I2C1_Init 2 */
+
+	/* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
+ * @brief RTC Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_RTC_Init(void) {
+
+	/* USER CODE BEGIN RTC_Init 0 */
+
+	/* USER CODE END RTC_Init 0 */
+
+	/* USER CODE BEGIN RTC_Init 1 */
+
+	/* USER CODE END RTC_Init 1 */
+	/** Initialize RTC Only
+	 */
+	hrtc.Instance = RTC;
+	hrtc.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
+	hrtc.Init.OutPut = RTC_OUTPUTSOURCE_ALARM;
+	if (HAL_RTC_Init(&hrtc) != HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN RTC_Init 2 */
+
+	/* USER CODE END RTC_Init 2 */
+
+}
+
+/**
  * @brief GPIO Initialization Function
  * @param None
  * @retval None
@@ -227,18 +351,8 @@ static void MX_GPIO_Init(void) {
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-
-	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(GPIOA, ROW_1_Pin | ROW_2_Pin | ROW_3_Pin | ROW_4_Pin,
 			GPIO_PIN_RESET);
-
-	/*Configure GPIO pin : PC13 */
-	GPIO_InitStruct.Pin = GPIO_PIN_13;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
 	/*Configure GPIO pins : ROW_1_Pin ROW_2_Pin ROW_3_Pin ROW_4_Pin */
 	GPIO_InitStruct.Pin = ROW_1_Pin | ROW_2_Pin | ROW_3_Pin | ROW_4_Pin;
@@ -256,6 +370,26 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+ * \fn 		: void Init_balanza(void)
+ * \brief 	: Inicializa todos los modulos necesarios
+ * \details : inicializa teclado.ssd,adc,filtro
+ * \author 	: Tobias Bavasso Piizzi
+ * \date   	: 26/09/2021
+ * \param 	: [in] void
+ * \return 	: void
+ * */
+void Init_balanza(void) {
+	SSD1306_Init(); 								// INICIALIZACION OLED
+
+	debounce_init(&deb_col_1, 1, DEBOUNCE_TICKS); 	//Incializo teclado
+	debounce_init(&deb_col_2, 1, DEBOUNCE_TICKS);
+	debounce_init(&deb_col_3, 1, DEBOUNCE_TICKS);
+
+	HAL_ADCEx_Calibration_Start(&hadc1);			// Calibro interno ADC
+	Inicializar_avg_movil(bat_buffer, &bat_index, bat_len, &bat_acc);// Inicializo filtro media movil
+}
 
 /* USER CODE END 4 */
 
