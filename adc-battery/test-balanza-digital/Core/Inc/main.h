@@ -40,6 +40,7 @@ extern "C" {
 #include "fonts.h"
 #include "ssd1306.h"
 #include "oled_balanza.h"
+#include "hx711.h"
 
 /* USER CODE END Includes */
 
@@ -81,7 +82,7 @@ void Init_balanza(void);
 #define COL_3_Pin GPIO_PIN_7
 #define COL_3_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
-#define ESPERA_BIENVENIDA 5000	//Espero 5000 ms
+#define ESPERA_BIENVENIDA 2000	//Espero 2000 ms
 
 enum state {BIENVENIDA, MENU, PESAJE, CALIBRAR, TARAR, PRECIO, PC};
 

@@ -102,7 +102,12 @@ void printoled_weight(int weight,int unit)
 {
 	int i,w,digits;
 	int div = 1;
-	digits = count_digits(weight);
+
+	if(!weight)
+		digits = 1;
+	else
+		digits = count_digits(weight);
+
 	if(weight < 1000)
 		unit = 0;
 	char weight_shown[digits+1+unit];
