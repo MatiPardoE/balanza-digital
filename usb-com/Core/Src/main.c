@@ -20,11 +20,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "usb_device.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "usbd_cdc_if.h"
-#include "string.h"
+#include "usb_balanza.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,20 +32,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// Maquina de estados general
-#define WEIGHING	0 // Estado por defecto
-#define CALIBRATION	1
-#define TARE		2
-#define PRICES		3
-#define PC			4
-
 // Maquina de estados Serial RX
-#define INIT_CMD    0
-#define RX_CMD      1
-#define RX_CEN      2
-#define RX_DEC      3
-#define RX_UNI      4
-#define END_CMD     5
+
 
 /* USER CODE END PD */
 
@@ -72,107 +58,8 @@ static void MX_GPIO_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-uint8_t general_state = WEIGHING;
-
-uint16_t(*hook_rx)(uint8_t *b, uint16_t len);
-extern USBD_HandleTypeDef hUsbDeviceFS;
 uint16_t weight_qt = 0;
 uint8_t flag_weight_qt = 0;
-uint32_t flagtx;
-uint8_t buftx[128];
-
-uint16_t recibir(uint8_t *b, uint16_t len)
-{
-	int i;
-	for(i=0;i<len;i++) buftx[i]=b[i];
-	flagtx = len;
-	return len;
-}
-
-void handle_serial(uint8_t b){
-	static uint8_t state = INIT_CMD;
-	static uint8_t prev_byte;
-	switch(state){
-	case INIT_CMD:
-		if(b == '<'){
-			state = RX_CMD;
-		}
-		break;
-	case RX_CMD:
-		if(b == 'T' || b == 'C' || b == 'P' || b == 'D'){
-			prev_byte = b;
-			state = END_CMD;
-		} else if(b >= '0' && b <= '9'){
-			flag_weight_qt = 0;
-			weight_qt = 0;
-			weight_qt += (b-'0')*1000;
-			state = RX_CEN;
-		} else {
-			state = INIT_CMD;
-		}
-		break;
-	case RX_CEN:
-		if(b >= '0' && b <= '9'){
-			weight_qt += (b-'0')*100;
-			state = RX_DEC;
-		} else {
-			state = INIT_CMD;
-		}
-		break;
-	case RX_DEC:
-		if(b >= '0' && b <= '9'){
-			weight_qt += (b-'0')*10;
-			state = RX_UNI;
-		} else {
-			state = INIT_CMD;
-		}
-		break;
-	case RX_UNI:
-		if(b >= '0' && b <= '9'){
-			prev_byte = b;
-			weight_qt += b-'0';
-			state = END_CMD;
-		} else {
-			state = INIT_CMD;
-		}
-		break;
-	case END_CMD:
-		if(b == '>'){
-			if(prev_byte == 'T'){ // tarar
-				general_state = TARE;
-			} else if(prev_byte == 'C'){ // calibrar
-				general_state = CALIBRATION;
-			} else if(prev_byte == 'P'){ // pesaje
-				general_state = WEIGHING; // COMO RESOLVEMOS ESTO?
-			} else if(prev_byte == 'D'){ // desconectar
-				general_state = WEIGHING; // COMO RESOLVEMOS ESTO?
-			} else if(prev_byte >= '0' && prev_byte <= '9'){ // valor peso
-				flag_weight_qt = 1;
-			}
-		}
-		state = INIT_CMD;
-		break;
-	}
-}
-
-uint16_t serial_rx(uint8_t *buf, uint16_t len){
-	int i;
-	for(i=0;i<len;i++)
-		handle_serial(buf[i]);
-	return len;
-}
-
-void serial_tx_num(uint16_t num){
-	char buf[8];
-	sprintf(buf, "<%04d>", num);
-	CDC_Transmit_FS((uint8_t*)buf, strlen(buf));
-}
-
-void serial_tx_cmd(const char* cmd){
-	char buf[4];
-	sprintf(buf, "<%s>", cmd);
-	CDC_Transmit_FS((uint8_t*)buf, strlen(buf));
-}
 
 /* USER CODE END 0 */
 
@@ -183,7 +70,7 @@ void serial_tx_cmd(const char* cmd){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	hook_rx = recibir;
+	usb_balanza_init();
 
   /* USER CODE END 1 */
 
@@ -214,6 +101,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  /*
 	  if(flagtx)
 	  {
 		  //int len = flagtx;
@@ -231,12 +119,27 @@ int main(void)
 		  serial_tx_num(3);
 		  HAL_Delay(2000);
 		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		  serial_tx_num(3000);
+		  HAL_Delay(2000);
+		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		  serial_tx_num(300);
+		  HAL_Delay(2000);
+		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		  serial_tx_num(30);
+		  HAL_Delay(2000);
+		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		  serial_tx_num(3);
+		  HAL_Delay(2000);
+		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+
 		  serial_tx_cmd("L");
 		  HAL_Delay(2000);
 		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 		  serial_tx_cmd("D");
+
 		  //CDC_Transmit_FS(buftx, len);
 	  }
+	  */
 
     /* USER CODE END WHILE */
 
