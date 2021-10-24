@@ -1,0 +1,6 @@
+hx711.c:20:10:HX711_get_offset	0	static
+hx711.c:24:9:HX711_is_ready	8	static
+hx711.c:30:9:HX711_read_raw	16	static
+hx711.c:74:9:HX711_read_average_raw	16	static
+hx711.c:13:6:HX711_calibracion	8	static
+hx711.c:84:9:HX711_read_average_value	8	static
