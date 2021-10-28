@@ -32,8 +32,13 @@ void HX711_calib_harcodeado(void){
 }
 
 float HX711_calib(uint32_t calib_weight){
+	uint8_t i;
+	int32_t sum = 0;
 
-	scale_g = calib_weight / HX711_read_average_value(10);
+	for(i = 0 ; i < (10 + 1) ; i++) //El +1 es por un posible ajuste en la variable sample y confirmar que son muestras validas
+			sum += HX711_read_average_raw(10);
+
+	scale_g = calib_weight / (sum/10);
 
 	return scale_g;
 }
@@ -42,11 +47,17 @@ void HX711_set_scale_g(float value_scale_g){
 	scale_g = value_scale_g;
 }
 
-void HX711_tare(void){
+void HX711_tare(uint8_t prom){
+	uint8_t i;
+	int32_t sum = 0;
+
 	PD_SCK_SET_LOW;
 	HAL_Delay(1);
-	HX711_read_average_raw(10);
-	offset=HX711_read_average_raw(20);
+
+	for(i = 0 ; i < (prom + 1) ; i++) //El +1 es por un posible ajuste en la variable sample y confirmar que son muestras validas
+		sum += HX711_read_average_raw(prom);
+
+	offset= sum/prom;
 }
 
 uint32_t HX711_get_offset(void){
@@ -104,13 +115,24 @@ int32_t HX711_read_raw(void)
 }
 
 int32_t HX711_read_average_raw(uint8_t prom){
-	int32_t sumatoria=0;
-	uint8_t i=0;
 
-	for(i=prom;i>0;i--){
-		sumatoria += HX711_read_raw();
+	uint8_t j;
+	int32_t sum = 0;
+	static int32_t vector_value[SAMPLE_MAX]; //variables static arrancan en 0
+	static uint8_t sample = 0;
+
+	vector_value[sample] = HX711_read_raw();
+
+	sample++;
+
+	sample %= prom;
+
+	for(j = 0 ; j < prom ; j++ ){
+		sum += vector_value[j];
 	}
-	return (sumatoria/prom);
+
+	return sum/prom;
+
 }
 
 int32_t HX711_read_average_value(uint8_t prom){
@@ -118,16 +140,13 @@ int32_t HX711_read_average_value(uint8_t prom){
 }
 
 int32_t HX711_read_g(){
-	uint8_t i=0;
-	int32_t value_unscaled,current_weight_g;
-	double value_kalman,sum_value_kalman=0;
 
-	for(i=0;i<4;i++){
-		value_unscaled = HX711_read_average_value(3);
-		value_kalman = KALMAN(value_unscaled);
-		sum_value_kalman += value_kalman;
-	}
-	current_weight_g = (sum_value_kalman/4)*scale_g;//Divido por 4 para el prom
+	int32_t current_weight_g;
+	double value_kalman;
+
+	value_kalman = KALMAN(HX711_read_average_value(3));
+
+	current_weight_g = value_kalman * scale_g;
 
 	return current_weight_g;
 }

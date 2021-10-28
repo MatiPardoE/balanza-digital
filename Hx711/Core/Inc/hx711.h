@@ -24,6 +24,8 @@
 #define DOUT_READ			HAL_GPIO_ReadPin(PD_DT_PORT, PD_DT_PIN)
 #define DOUT_SET_HIGH		HAL_GPIO_WritePin(PD_DT_PORT, PD_DT_PIN,GPIO_PIN_SET)
 
+#define SAMPLE_MAX			256 							// Maximos samples para promediar
+
 
 	extern void delay_us (uint32_t us);
 
@@ -41,7 +43,7 @@
 
 	int32_t HX711_read_average_raw(uint8_t prom);
 
-	void HX711_tare(void);
+	void HX711_tare(uint8_t prom);
 
 	int32_t HX711_read_average_value(uint8_t prom);
 

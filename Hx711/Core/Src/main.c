@@ -92,7 +92,7 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  HX711_tare();
+  HX711_tare(10);
 
   HX711_calib_harcodeado();
 
