@@ -28,17 +28,17 @@ double KALMAN(int32_t U){
 }
 
 void HX711_calib_harcodeado(void){
-	scale_g=0.00074912;
+	scale_g=0.00074214855;
 }
 
 float HX711_calib(uint32_t calib_weight){
 	uint8_t i;
-	int32_t sum = 0;
+	int32_t value = 0;
 
-	for(i = 0 ; i < (10 + 1) ; i++) //El +1 es por un posible ajuste en la variable sample y confirmar que son muestras validas
-			sum += HX711_read_average_raw(10);
+	for(i = 0 ; i < (10) ; i++) //El +1 es por un posible ajuste en la variable sample y confirmar que son muestras validas
+			value = HX711_read_average_value(10);
 
-	scale_g = calib_weight / (sum/10);
+	scale_g = calib_weight / (value * 1.0);
 
 	return scale_g;
 }
@@ -49,15 +49,15 @@ void HX711_set_scale_g(float value_scale_g){
 
 void HX711_tare(uint8_t prom){
 	uint8_t i;
-	int32_t sum = 0;
+	int32_t value = 0;
 
 	PD_SCK_SET_LOW;
 	HAL_Delay(1);
 
-	for(i = 0 ; i < (prom + 1) ; i++) //El +1 es por un posible ajuste en la variable sample y confirmar que son muestras validas
-		sum += HX711_read_average_raw(prom);
+	for(i = 0 ; i < prom ; i++) //Lo hago bloqueante
+		value = HX711_read_average_raw(prom);
 
-	offset= sum/prom;
+	offset= value;
 }
 
 uint32_t HX711_get_offset(void){
@@ -144,7 +144,7 @@ int32_t HX711_read_g(){
 	int32_t current_weight_g;
 	double value_kalman;
 
-	value_kalman = KALMAN(HX711_read_average_value(3));
+	 value_kalman = HX711_read_average_value(3);
 
 	current_weight_g = value_kalman * scale_g;
 
