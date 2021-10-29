@@ -87,7 +87,7 @@ extern debounce_t deb_col_1; 	//! Variable para inicializar
 extern debounce_t deb_col_2;	//! Variable para inicializar
 extern debounce_t deb_col_3;	//! Variable para inicializar
 
-uint8_t key;
+uint8_t key=0;
 // END VARIABLE KEYPAD
 
 // START VARIABLE ADC
@@ -112,8 +112,8 @@ int main(void)
   /* USER CODE BEGIN 1 */
 	enum state s = BIENVENIDA;
 
-	int32_t new_w = -1;
-	int32_t last_w = 0;
+	int32_t new_w = 0;
+	int32_t last_w = -1;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -167,7 +167,7 @@ int main(void)
 		switch (s) {
 			case BIENVENIDA:
 				printoled_start();
-				HX711_tare();	//TARO LA BASE PARA EL OFFSET
+				HX711_tare(40);	//TARO LA BASE PARA EL OFFSET
 				s = PESAJE;
 				SSD1306_Clear();	//Limpio OLED
 				break;
@@ -179,13 +179,13 @@ int main(void)
 				break;
 
 			case PESAJE:
-				//new_w = HX711_read_g();
+				if(HX711_is_ready())new_w = HX711_read_g();
 				if (new_w!= last_w){
 					last_w = new_w;
 					SSD1306_Clear();	//Limpio OLED
 					printoled_weight(last_w, 0);
 				}
-				if(read_keypad() == 12){
+				if(key == 12){
 					s = MENU;
 					SSD1306_Clear();	//Limpio OLED
 				}
@@ -491,6 +491,17 @@ void Init_balanza(void) {
 	HAL_ADCEx_Calibration_Start(&hadc1);			// Calibro interno ADC
 	Inicializar_avg_movil(bat_buffer, &bat_index, bat_len, &bat_acc);// Inicializo filtro media movil
 
+}
+
+void SysTick_Handler(void)
+{
+  /* USER CODE BEGIN SysTick_IRQn 0 */
+	key = read_keypad();
+  /* USER CODE END SysTick_IRQn 0 */
+  HAL_IncTick();
+  /* USER CODE BEGIN SysTick_IRQn 1 */
+
+  /* USER CODE END SysTick_IRQn 1 */
 }
 
 /* USER CODE END 4 */

@@ -24,32 +24,33 @@
 #define DOUT_READ			HAL_GPIO_ReadPin(PD_DT_PORT, PD_DT_PIN)
 #define DOUT_SET_HIGH		HAL_GPIO_WritePin(PD_DT_PORT, PD_DT_PIN,GPIO_PIN_SET)
 
-void delay_us(uint32_t us);
+#define SAMPLE_MAX			256 							// Maximos samples para promediar
 
-// check if HX711 is ready
-// from the datasheet: When output data is not ready for retrieval, digital output pin DOUT is high. Serial clock
-// input PD_SCK should be low. When DOUT goes to low, it indicates data is ready for retrieval.
-uint8_t HX711_is_ready(void);
 
-uint32_t HX711_get_offset(void);
+	 void delay_us (uint32_t us);
 
-void HX711_set_scale_g(float value_scale_g);
+	// check if HX711 is ready
+	// from the datasheet: When output data is not ready for retrieval, digital output pin DOUT is high. Serial clock
+	// input PD_SCK should be low. When DOUT goes to low, it indicates data is ready for retrieval.
+	uint8_t HX711_is_ready(void);
 
-// waits for the chip to be ready and returns a reading
-int32_t HX711_read_raw(void);
+	uint32_t HX711_get_offset(void);
 
-int32_t HX711_read_average_raw(uint8_t prom);
+	void HX711_set_scale_g(float value_scale_g);
 
-void HX711_tare(void);
+	// waits for the chip to be ready and returns a reading
+	int32_t HX711_read_raw(void);
 
-int32_t HX711_read_average_value(uint8_t prom);
+	int32_t HX711_read_average_raw(uint8_t prom);
 
-int32_t HX711_read_g();
+	void HX711_tare(uint8_t prom);
 
-double KALMAN(int32_t U);
+	int32_t HX711_read_average_value(uint8_t prom);
 
-float HX711_calib(uint32_t calib_weight);
+	int32_t HX711_read_g();
 
-void HX711_calib_harcodeado(void);
+	float HX711_calib(uint32_t calib_weight);
+
+	void HX711_calib_harcodeado(void);
 
 #endif /* INC_HX711_H_ */
