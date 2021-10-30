@@ -26,6 +26,12 @@
 
 #define SAMPLE_MAX			256 							// Maximos samples para promediar
 
+#define DELAY_1US			72
+#define UNVALID				2000000000
+#define UNVALID_WEIGHT		-5000
+
+enum state_read {WAIT_RDY, SET_PD_SCK_LOW, SET_PD_SCK_HIGH, READ_CELL, HX711_END_HIGH, HX711_END_LOW};
+
 
 	 void delay_us (uint32_t us);
 
