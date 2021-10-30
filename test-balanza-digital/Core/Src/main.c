@@ -88,6 +88,8 @@ extern debounce_t deb_col_2;	//! Variable para inicializar
 extern debounce_t deb_col_3;	//! Variable para inicializar
 
 uint8_t key=0;
+
+enum state s = BIENVENIDA;
 // END VARIABLE KEYPAD
 
 // START VARIABLE ADC
@@ -110,7 +112,7 @@ extern uint32_t bat_acc;				//! Usada para avg movl
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	enum state s = BIENVENIDA;
+	//enum state s = BIENVENIDA;
 
 	int32_t new_w = 0;
 	int32_t last_w = -1;
@@ -166,28 +168,31 @@ int main(void)
 		Measure_battery(); // Toma muestras cada 5s y lo promedia
 		switch (s) {
 			case BIENVENIDA:
-				printoled_start();
+				//printoled_start();
 				HX711_tare(40);	//TARO LA BASE PARA EL OFFSET
 				s = PESAJE;
-				SSD1306_Clear();	//Limpio OLED
+				//SSD1306_Clear();	//Limpio OLED
 				break;
 
 			case MENU:
-				printoled_menu();
-				printoled_battery(charge_por);
+				//printoled_menu();
+				//printoled_battery(charge_por);
+				if(read_keypad() == 12){
+					s = PESAJE;
+				}
 
 				break;
 
 			case PESAJE:
-				if(HX711_is_ready())new_w = HX711_read_g();
-				if (new_w!= last_w){
+				new_w = HX711_read_g();
+				/*if (new_w!= last_w){
 					last_w = new_w;
 					SSD1306_Clear();	//Limpio OLED
 					printoled_weight(last_w, 0);
-				}
-				if(key == 12){
+				}*/
+				if(read_keypad() == 12){
 					s = MENU;
-					SSD1306_Clear();	//Limpio OLED
+					//SSD1306_Clear();	//Limpio OLED
 				}
 				break;
 
@@ -482,7 +487,7 @@ static void MX_GPIO_Init(void)
  * \return 	: void
  * */
 void Init_balanza(void) {
-	SSD1306_Init(); 								// INICIALIZACION OLED
+	//SSD1306_Init(); 								// INICIALIZACION OLED
 
 	debounce_init(&deb_col_1, 1, DEBOUNCE_TICKS); 	//Incializo teclado
 	debounce_init(&deb_col_2, 1, DEBOUNCE_TICKS);
@@ -496,7 +501,7 @@ void Init_balanza(void) {
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-	key = read_keypad();
+	//key = read_keypad();
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */

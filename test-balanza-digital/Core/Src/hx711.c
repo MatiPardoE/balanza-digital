@@ -12,6 +12,12 @@ uint32_t offset;
 float scale_g;
 extern TIM_HandleTypeDef htim1;
 
+
+//TEST
+uint8_t i = 0;
+uint32_t read_ticks;
+
+
 void HX711_calib_harcodeado(void){
 	scale_g=0.00074214855;
 }
@@ -39,10 +45,17 @@ void HX711_tare(uint8_t prom){
 	PD_SCK_SET_LOW;
 	HAL_Delay(1);
 
-	for(i = 0 ; i < prom ; i++) //Lo hago bloqueante
+
+	while(i<prom){
+
 		value = HX711_read_average_raw(prom);
 
-	offset= value;
+		if(value != UNVALID)i++;
+
+	}
+
+	offset = value;
+
 }
 
 uint32_t HX711_get_offset(void){
@@ -64,57 +77,59 @@ uint8_t HX711_is_ready(void)
 int32_t HX711_read_raw(void){
 	static enum state_read read_state = WAIT_RDY;
 	static int32_t value = 0;
-	static uint8_t i = 0;
-	static uint32_t read_ticks;
+	int32_t return_value = 0;
+	//static uint8_t i = 0;
+	//static uint32_t read_ticks;
 	uint8_t ret_flag = 0;
 
 	switch(read_state){
 	case WAIT_RDY:
-		if(HX711_is_ready()){
+		if(!HX711_is_ready()){
 			read_state = SET_PD_SCK_LOW;
-			read_ticks = HAL_GetTick();
+			SET_TIMER_TO_0;
 		}
 		break;
 	case SET_PD_SCK_LOW:
-		if(HAL_GetTick() - read_ticks > DELAY_1US){
+		if(GET_TIMER>10){
 			PD_SCK_SET_LOW;
 			read_state = SET_PD_SCK_HIGH;
-			read_ticks = HAL_GetTick();
+			SET_TIMER_TO_0;
 		}
 		break;
 	case SET_PD_SCK_HIGH:
-		if(HAL_GetTick() - read_ticks > DELAY_1US){
+		if(GET_TIMER>10){
 			PD_SCK_SET_HIGH;
 			read_state = READ_CELL;
-			read_ticks = HAL_GetTick();
+			SET_TIMER_TO_0;
 		}
 		break;
 	case READ_CELL:
-		if(HAL_GetTick() - read_ticks > DELAY_1US){
+		if(GET_TIMER>10){
 	        value = value << 1;  //Shift MSB to the left
-	        if(DOUT_READ){
-	        	value+=1;
-	        }
 	        PD_SCK_SET_LOW;
+	        if (DOUT_READ) {
+				value += 1;
+			}
 	        i++;
-		}
-		if(i > 23){ // ya lei todos los datos
-			read_state = HX711_END_HIGH;
-			read_ticks = HAL_GetTick();
-		} else {
-			read_state = SET_PD_SCK_HIGH;
-			read_ticks = HAL_GetTick();
+			if (i > 23) { // ya lei todos los datos
+				i=0;
+				read_state = HX711_END_HIGH;
+				SET_TIMER_TO_0;
+			} else {
+				read_state = SET_PD_SCK_HIGH;
+				SET_TIMER_TO_0;
+			}
 		}
 		break;
 	case HX711_END_HIGH:
-		if(HAL_GetTick() - read_ticks > DELAY_1US){
+		if(GET_TIMER>10){
 			PD_SCK_SET_HIGH;
 			read_state = HX711_END_LOW;
-			read_ticks = HAL_GetTick();
+			SET_TIMER_TO_0;
 		}
 		break;
 	case HX711_END_LOW:
-		if(HAL_GetTick() - read_ticks > DELAY_1US){
+		if(GET_TIMER>10){
 			PD_SCK_SET_LOW;
 			read_state = WAIT_RDY;
 		    if(value & 0x800000)
@@ -126,10 +141,16 @@ int32_t HX711_read_raw(void){
 		ret_flag = 0;
 		read_state = WAIT_RDY;
 	}
-	if(ret_flag)
-		return value;
-	else
+
+	if(ret_flag){
+		return_value = value;
+		value = 0;
+		return return_value;
+	}
+	else{
 		return UNVALID;
+	}
+
 }
 /*
 int32_t HX711_read_raw(void)
