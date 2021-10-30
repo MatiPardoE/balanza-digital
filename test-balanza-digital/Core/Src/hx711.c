@@ -12,6 +12,12 @@ uint32_t offset;
 float scale_g;
 extern TIM_HandleTypeDef htim1;
 
+
+//TEST
+uint8_t i = 0;
+uint32_t read_ticks;
+
+
 void HX711_calib_harcodeado(void){
 	scale_g=0.00074214855;
 }
@@ -39,10 +45,17 @@ void HX711_tare(uint8_t prom){
 	PD_SCK_SET_LOW;
 	HAL_Delay(1);
 
-	for(i = 0 ; i < prom ; i++) //Lo hago bloqueante
+
+	while(i<prom){
+
 		value = HX711_read_average_raw(prom);
 
-	offset= value;
+		if(value != UNVALID)i++;
+
+	}
+
+	offset = value;
+
 }
 
 uint32_t HX711_get_offset(void){
@@ -61,6 +74,85 @@ uint8_t HX711_is_ready(void)
 	return 1;
 }
 
+int32_t HX711_read_raw(void){
+	static enum state_read read_state = WAIT_RDY;
+	static int32_t value = 0;
+	int32_t return_value = 0;
+	//static uint8_t i = 0;
+	//static uint32_t read_ticks;
+	uint8_t ret_flag = 0;
+
+	switch(read_state){
+	case WAIT_RDY:
+		if(!HX711_is_ready()){
+			read_state = SET_PD_SCK_LOW;
+			SET_TIMER_TO_0;
+		}
+		break;
+	case SET_PD_SCK_LOW:
+		if(GET_TIMER>10){
+			PD_SCK_SET_LOW;
+			read_state = SET_PD_SCK_HIGH;
+			SET_TIMER_TO_0;
+		}
+		break;
+	case SET_PD_SCK_HIGH:
+		if(GET_TIMER>10){
+			PD_SCK_SET_HIGH;
+			read_state = READ_CELL;
+			SET_TIMER_TO_0;
+		}
+		break;
+	case READ_CELL:
+		if(GET_TIMER>10){
+	        value = value << 1;  //Shift MSB to the left
+	        PD_SCK_SET_LOW;
+	        if (DOUT_READ) {
+				value += 1;
+			}
+	        i++;
+			if (i > 23) { // ya lei todos los datos
+				i=0;
+				read_state = HX711_END_HIGH;
+				SET_TIMER_TO_0;
+			} else {
+				read_state = SET_PD_SCK_HIGH;
+				SET_TIMER_TO_0;
+			}
+		}
+		break;
+	case HX711_END_HIGH:
+		if(GET_TIMER>10){
+			PD_SCK_SET_HIGH;
+			read_state = HX711_END_LOW;
+			SET_TIMER_TO_0;
+		}
+		break;
+	case HX711_END_LOW:
+		if(GET_TIMER>10){
+			PD_SCK_SET_LOW;
+			read_state = WAIT_RDY;
+		    if(value & 0x800000)
+		    	value |= 0xff000000;  //Si es negativo lo retorno con signo de 32 bits
+		    ret_flag = 1;
+		}
+		break;
+	default:
+		ret_flag = 0;
+		read_state = WAIT_RDY;
+	}
+
+	if(ret_flag){
+		return_value = value;
+		value = 0;
+		return return_value;
+	}
+	else{
+		return UNVALID;
+	}
+
+}
+/*
 int32_t HX711_read_raw(void)
 {
     int32_t value=0;
@@ -104,40 +196,48 @@ int32_t HX711_read_raw(void)
 
     return(value);
 }
-
+*/
 int32_t HX711_read_average_raw(uint8_t prom){
-
-	uint8_t j;
+	int32_t current_value;
 	int32_t sum = 0;
 	static int32_t vector_value[SAMPLE_MAX]; //variables static arrancan en 0
 	static uint8_t sample = 0;
 
-	vector_value[sample] = HX711_read_raw();
+	current_value = HX711_read_raw();
 
-	sample++;
+	if(current_value != UNVALID){
+		vector_value[sample] = current_value;
 
-	sample %= prom;
+		sample++;
+		sample %= prom;
 
-	for(j = 0 ; j < prom ; j++ ){
-		sum += vector_value[j];
+		for(uint8_t j = 0 ; j < prom ; j++ ){
+			sum += vector_value[j];
+		}
+		return sum/prom;
+	} else {
+		return UNVALID;
 	}
-
-	return sum/prom;
 
 }
 
 int32_t HX711_read_average_value(uint8_t prom){
-	return (HX711_read_average_raw(prom)-offset);
+	int32_t avg = HX711_read_average_raw(prom);
+
+	if(avg != UNVALID)
+		return avg-offset;
+	else
+		return UNVALID;
 }
 
 int32_t HX711_read_g(){
+	double value_kalman = HX711_read_average_value(3);
 
-	int32_t current_weight_g;
-	double value_kalman;
+	if(value_kalman != UNVALID)
+		return value_kalman * scale_g;
+	else
+		return UNVALID_WEIGHT;
 
-	 value_kalman = HX711_read_average_value(3);
-
-	current_weight_g = value_kalman * scale_g;
-
-	return current_weight_g;
 }
+
+
