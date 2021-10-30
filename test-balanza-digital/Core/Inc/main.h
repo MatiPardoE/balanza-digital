@@ -64,6 +64,7 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void Init_balanza(void);
+int16_t read_calib();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -81,7 +82,12 @@ void Init_balanza(void);
 #define COL_2_GPIO_Port GPIOA
 #define COL_3_Pin GPIO_PIN_7
 #define COL_3_GPIO_Port GPIOA
+
 /* USER CODE BEGIN Private defines */
+
+#define ENTER 	12
+#define ATRAS	10
+
 #define ESPERA_BIENVENIDA 2000	//Espero 2000 ms
 
 enum state {BIENVENIDA, MENU, PESAJE, CALIBRAR, TARAR, PRECIO, PC};

@@ -74,7 +74,7 @@ static void MX_TIM1_Init(void);
 /* USER CODE BEGIN 0 */
 
 // START VARIABLE
-uint32_t tick_main;
+uint32_t ticks_main = 0;
 // END VARIABLE
 
 // START VARIABLE SRAM
@@ -88,6 +88,14 @@ extern debounce_t deb_col_2;	//! Variable para inicializar
 extern debounce_t deb_col_3;	//! Variable para inicializar
 
 uint8_t key=0;
+
+
+int32_t new_w = 0;
+int32_t last_w = -1;
+
+int16_t calib_val = 0;
+
+enum state s = BIENVENIDA; // DEBERIA SER LOCAL
 // END VARIABLE KEYPAD
 
 // START VARIABLE ADC
@@ -110,10 +118,17 @@ extern uint32_t bat_acc;				//! Usada para avg movl
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	enum state s = BIENVENIDA;
+	// enum state s = BIENVENIDA;
 
-	int32_t new_w = 0;
-	int32_t last_w = -1;
+	//int32_t new_w = 0;
+	//int32_t last_w = -1;
+
+	uint8_t last_por = 2;
+
+
+	static uint8_t state_pesaje = 0;
+	//int16_t calib_val = 0;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -159,7 +174,7 @@ int main(void)
 
 
 
-	tick_main = HAL_GetTick();
+	// tick_main = HAL_GetTick();
 
 
 	while (1) {
@@ -174,24 +189,70 @@ int main(void)
 
 			case MENU:
 				printoled_menu();
-				printoled_battery(charge_por);
+				if (last_por!= charge_por){
+					last_por = charge_por;
+					printoled_battery(last_por);
+				}
+
+				switch(key){
+				case 1:
+					s = PESAJE;
+					break;
+				case 2:
+					s = CALIBRAR;
+					break;
+				case 3:
+					s = TARAR;
+					break;
+				case 4:
+					s = PRECIO;
+					break;
+				case 5:
+					s = PC;
+					break;
+				}
 
 				break;
-
 			case PESAJE:
-				if(HX711_is_ready())new_w = HX711_read_g();
-				if (new_w!= last_w){
-					last_w = new_w;
-					SSD1306_Clear();	//Limpio OLED
-					printoled_weight(last_w, 0);
-				}
-				if(key == 12){
-					s = MENU;
-					SSD1306_Clear();	//Limpio OLED
+				switch(state_pesaje){
+				case 0:
+					if(HX711_is_ready())new_w = HX711_read_g();
+						if (new_w!= last_w){
+							last_w = new_w;
+							SSD1306_Clear();	//Limpio OLED
+							printoled_weight(last_w, 0);
+						}
+						state_pesaje = 1;
+						ticks_main = HAL_GetTick();
+					break;
+				case 1:
+					if(HAL_GetTick() - ticks_main > 1440000){
+						state_pesaje = 0;
+					} else {
+						if(read_keypad() == ENTER){
+							s = MENU;
+							SSD1306_Clear();	//Limpio OLED
+							state_pesaje = 0;
+						}
+					}
 				}
 				break;
 
 			case CALIBRAR:
+				printoled_calibrate(0);
+				calib_val = read_calib();
+				switch(calib_val){
+				case 0:
+					break;
+				case -1:
+					s = MENU;
+					break;
+				default: // El usuario ingreso un valor
+					HX711_calib(calib_val);
+					// Aca deberiamos guardar el valor de calibracion en la memoria de Rivu
+					printoled_calibrate(1);
+					s = PESAJE;
+				}
 
 				break;
 
@@ -493,10 +554,42 @@ void Init_balanza(void) {
 
 }
 
+/**
+ * \fn 		: int16_t read_calib()
+ * \brief 	: Lee los numeros ingresados por teclado para la calibracion
+ * \details : Almacena los valores en una variable estatica hasta que el usuario ingrese #
+ * \author 	: Hernan Rodriguez
+ * \date   	: 29/10/2021
+ * \param 	: [in] void
+ * \return 	: int16_t
+ * */
+int16_t read_calib(){
+	static int16_t calib_num = 0;
+	int16_t aux;
+	if(key != 0 && key != ENTER && key != ATRAS){
+		if(key == 11) key = 0;
+		calib_num = calib_num*10 + key;
+		printoled_number(key);
+	} else if(key == ATRAS){ // voy para atras
+		printoled_number(-1);
+		calib_num = 0;
+		return -1;
+	} else if(key == ENTER){ // ingrese un numero
+		printoled_number(-1);
+		aux = calib_num;
+		calib_num = 0;
+		return aux;
+	}
+	return 0; // el usuario no toco nada
+}
+
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-	key = read_keypad();
+	// static uint64_t m_ticks;
+
+	//key = read_keypad();
+
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */

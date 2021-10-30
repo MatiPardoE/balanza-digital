@@ -23,4 +23,11 @@ void printoled_start();
 void printoled_number(int number);
 
 void printoled_price(int price);
+
+void printoled_calibrate(int text);
+
+void printoled_PC(int text);
+
+void printoled_tare();
+
 #endif /* INC_DEBOUNCE_H_ */
