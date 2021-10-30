@@ -171,59 +171,66 @@ int main(void) {
 
 		Measure_battery(); 		// Toma muestras cada 5s y lo promedia
 		key = read_keypad();
-		if (key == 12) {
+		if (key == 10) {
 			s = MENU;
-			SSD1306_Clear();	//Limpio OLED
+			//SSD1306_Clear();	//Limpio OLED
 
 		}
 
 		switch (s) {
 		case WELCOME:
-			printoled_start();
+			//printoled_start();
 			HX711_tare(40);	//TARO LA BASE PARA EL OFFSET
 			s = WEIGHTHING;
-			SSD1306_Clear();	//Limpio OLED
+			//SSD1306_Clear();	//Limpio OLED
 			break;
 
 		case MENU:
-			printoled_menu();
+			//printoled_menu();
 			Compare_print(last_bat, charge_por, BAT);
 			if (key > WELCOME && key < MENU) { //LA TECLA QUE SE TOCA ME MUEVE
 				s = key;
-				SSD1306_Clear();	//Limpio OLED
+				//SSD1306_Clear();	//Limpio OLED
 				if (key == CALIBRATE)
-					printoled_calibrate(0);
+					//printoled_calibrate(0);
 				if (key == PRICE)
-					printoled_calibrate(2);
+					//printoled_calibrate(2);
 				tick_main = HAL_GetTick();
 			}
 
 			break;
 
 		case WEIGHTHING:
-			if ((new_w = HX711_read_g()) > LOW_LIMIT)
+			new_w = HX711_read_g();
+			if (new_w > LOW_LIMIT){
 				Compare_print(last_w, new_w, WEIGHTHING);
+				last_w = new_w;
+			}
+
 			break;
 
 		case CALIBRATE:
 			if (HAL_GetTick() - tick_main > WAIT_VIEW) {
 				s = CALIB_KEY;
-				SSD1306_Clear();	//Limpio OLED
+				//SSD1306_Clear();	//Limpio OLED
 				tick_main = HAL_GetTick();
 			}
 			break;
 
 		case CALIB_KEY:
-			if (key != 12) {
-				calib_val *= 10;
-				if (key == 0)
-					key = 0;
-				calib_val += key;
-				printoled_number(key);
-			} else {
-				printoled_calibrate(1);
-				s = MENU;
+			if (key != 0) {
+				if (key != 12) {
+					calib_val *= 10;
+					if (key == 11)
+						key = 0;
+					calib_val += key;
+					//printoled_number(key);
+				} else {
+					//printoled_calibrate(1);
+					s = MENU;
+				}
 			}
+
 
 			break;
 		case TARE:
@@ -233,29 +240,32 @@ int main(void) {
 		case PRICE:
 			if (HAL_GetTick() - tick_main > WAIT_VIEW) {
 				s = PRICE_KEY;
-				SSD1306_Clear();	//Limpio OLED
+				//SSD1306_Clear();	//Limpio OLED
 				tick_main = HAL_GetTick();
 			}
 
 			break;
 		case PRICE_KEY:
-			if (key != 12) {
-				calib_val *= 10;
-				if (key == 0)
-					key = 0;
-				calib_val += key;
-				printoled_number(key);
-			} else {
-				printoled_price(calib_val * last_w);
-				s = PRICE_VIEW;
-				Tick_main = HAL_GetTick();
+			if (key != 0) {
+				if (key != 12) {
+					calib_val *= 10;
+					if (key == 11)
+						key = 0;
+					calib_val += key;
+					//printoled_number(key);
+				} else {
+					//printoled_price(calib_val * last_w);
+					s = PRICE_VIEW;
+					tick_main = HAL_GetTick();
+				}
 			}
+
 			break;
 
 		case PRICE_VIEW:
 			if (HAL_GetTick() - tick_main > WAIT_VIEW) {
 				s = PRICE;
-				SSD1306_Clear();	//Limpio OLED
+				//SSD1306_Clear();	//Limpio OLED
 				tick_main = HAL_GetTick();
 			}
 			break;
@@ -526,7 +536,7 @@ static void MX_GPIO_Init(void) {
  * \return 	: void
  * */
 void Init_balanza(void) {
-	SSD1306_Init(); 								// INICIALIZACION OLED
+	//SSD1306_Init(); 								// INICIALIZACION OLED
 
 	debounce_init(&deb_col_1, 1, DEBOUNCE_TICKS); 	//Incializo teclado
 	debounce_init(&deb_col_2, 1, DEBOUNCE_TICKS);
@@ -540,17 +550,18 @@ void Init_balanza(void) {
 void Compare_print(uint8_t last, uint8_t new, uint8_t type) {
 	if (new != last) {
 		last = new;
-		SSD1306_Clear();	//Limpio OLED
-		if (type == WEIGHTHING)
-			printoled_weight(last, 0);
-		else
-			printoled_battery(last);
+		//SSD1306_Clear();	//Limpio OLED
+		if (type == WEIGHTHING) {
+			//printoled_weight(last, 0);
+		} else {
+			//printoled_battery(last);
+		}
 	}
 }
 
 void SysTick_Handler(void) {
 	/* USER CODE BEGIN SysTick_IRQn 0 */
-	key = read_keypad();
+	//key = read_keypad();
 	/* USER CODE END SysTick_IRQn 0 */
 	HAL_IncTick();
 	/* USER CODE BEGIN SysTick_IRQn 1 */

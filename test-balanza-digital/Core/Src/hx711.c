@@ -232,11 +232,14 @@ int32_t HX711_read_average_value(uint8_t prom){
 
 int32_t HX711_read_g(){
 	double value_kalman = HX711_read_average_value(3);
+	int32_t weight_g;
 
-	if(value_kalman != UNVALID)
-		return value_kalman * scale_g;
-	else
+	if (value_kalman != UNVALID) {
+		weight_g = value_kalman * scale_g;
+		return weight_g;
+	} else {
 		return UNVALID_WEIGHT;
+	}
 
 }
 

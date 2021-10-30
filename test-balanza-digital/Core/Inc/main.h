@@ -64,7 +64,9 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void Init_balanza(void);
-int16_t read_calib();
+
+void Compare_print(uint8_t last,uint8_t new, uint8_t type);
+#define BAT 0
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -82,15 +84,11 @@ int16_t read_calib();
 #define COL_2_GPIO_Port GPIOA
 #define COL_3_Pin GPIO_PIN_7
 #define COL_3_GPIO_Port GPIOA
-
 /* USER CODE BEGIN Private defines */
+#define WAIT_VIEW 2000	//Espero 2000 ms
+#define LOW_LIMIT -3000	//Espero 2000 ms
 
-#define ENTER 	12
-#define ATRAS	10
-
-#define ESPERA_BIENVENIDA 2000	//Espero 2000 ms
-
-enum state {BIENVENIDA, MENU, PESAJE, CALIBRAR, TARAR, PRECIO, PC};
+enum state {WELCOME, WEIGHTHING, CALIBRATE, TARE, PRICE, PC, MENU, CALIB_KEY, PRICE_KEY, PRICE_VIEW};
 
 /* USER CODE END Private defines */
 
