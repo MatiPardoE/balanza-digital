@@ -22,6 +22,8 @@ void printoled_start();
 
 void printoled_number(int number);
 
+void printoled_calibrate(int text);
+
 void printoled_price(int price);
 
 void printoled_calibrate(int text);
