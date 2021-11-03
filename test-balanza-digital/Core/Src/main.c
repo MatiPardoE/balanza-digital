@@ -30,6 +30,7 @@
 #include "ssd1306.h"
 #include "oled_balanza.h"
 #include "hx711.h"
+#include "register.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -123,6 +124,7 @@ int main(void) {
 	 int32_t new_w = 0;
 	 int32_t last_w = -1;
 	 */
+
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -156,14 +158,10 @@ int main(void) {
 	ticks_adc = HAL_GetTick();					// Variable para ADC
 
 	/* Lectura calibraciones anteriores	*/
+	//guardarCalibracion(0.00074214855); //ESTO NO VA, falta poner la pila y que se lo acuerde.
+	HX711_set_scale_g(obtenerCalibracion());
 
-	/* DEBERIA SER*/
-	//escala_sram = HAL_RTCEx_BKUPRead(&hrtc, 1);
-	//offset_sram = HAL_RTCEx_BKUPRead(&hrtc, 2);
-	//HX711_set_scale_g(escala_sram);
-	/* DEBERIA SER*/
 
-	HX711_calib_harcodeado(); //REEMPLAZAR
 
 	tick_main = HAL_GetTick();
 
@@ -174,7 +172,6 @@ int main(void) {
 		if (key == 10) {
 			s = MENU;
 			//SSD1306_Clear();	//Limpio OLED
-
 		}
 
 		switch (s) {
@@ -221,11 +218,12 @@ int main(void) {
 			if (key != 0) {
 				if (key != 12) {
 					calib_val *= 10;
-					if (key == 11)
-						key = 0;
+					if (key == 11) key = 0;
 					calib_val += key;
 					//printoled_number(key);
 				} else {
+					guardarCalibracion(HX711_calib(calib_val));
+					calib_val=0;
 					//printoled_calibrate(1);
 					s = MENU;
 				}

@@ -9,7 +9,7 @@
 #include "hx711.h"
 
 uint32_t offset;
-float scale_g;
+double scale_g;
 extern TIM_HandleTypeDef htim1;
 
 
@@ -22,19 +22,22 @@ void HX711_calib_harcodeado(void){
 	scale_g=0.00074214855;
 }
 
-float HX711_calib(uint32_t calib_weight){
-	uint8_t i;
+double HX711_calib(uint16_t calib_weight){
+	uint8_t i = 0;
 	int32_t value = 0;
 
-	for(i = 0 ; i < (10) ; i++) //El +1 es por un posible ajuste en la variable sample y confirmar que son muestras validas
-			value = HX711_read_average_value(10);
+	while(i<10){
+		value = HX711_read_average_value(10);
+
+		if(value != UNVALID)i++;
+	}
 
 	scale_g = calib_weight / (value * 1.0);
 
 	return scale_g;
 }
 
-void HX711_set_scale_g(float value_scale_g){
+void HX711_set_scale_g(double value_scale_g){
 	scale_g = value_scale_g;
 }
 

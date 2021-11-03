@@ -45,7 +45,7 @@ enum state_read {WAIT_RDY, SET_PD_SCK_LOW, SET_PD_SCK_HIGH, READ_CELL, HX711_END
 
 	uint32_t HX711_get_offset(void);
 
-	void HX711_set_scale_g(float value_scale_g);
+	void HX711_set_scale_g(double value_scale_g);
 
 	// waits for the chip to be ready and returns a reading
 	int32_t HX711_read_raw(void);
@@ -58,7 +58,7 @@ enum state_read {WAIT_RDY, SET_PD_SCK_LOW, SET_PD_SCK_HIGH, READ_CELL, HX711_END
 
 	int32_t HX711_read_g();
 
-	float HX711_calib(uint32_t calib_weight);
+	double HX711_calib(uint16_t calib_weight);
 
 	void HX711_calib_harcodeado(void);
 
