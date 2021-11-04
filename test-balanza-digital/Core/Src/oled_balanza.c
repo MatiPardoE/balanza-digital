@@ -209,7 +209,7 @@ void printoled_weight(int weight, int unit) {
 		SSD1306_Puts("g", &Font_16x26, 1);
 	}
 	if (neg) { //AGREGO SIMBOLO NEGATIVO
-		SSD1306_GotoXY(52 - 11 * digits, 20);
+		SSD1306_GotoXY(52 - 13 * digits, 20);
 		SSD1306_Putc('-', &Font_16x26, 1);
 	}
 	SSD1306_UpdateScreen();

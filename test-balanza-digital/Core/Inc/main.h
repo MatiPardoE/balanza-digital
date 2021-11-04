@@ -65,7 +65,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 void Init_balanza(void);
 
-void Compare_print(uint8_t last,uint8_t new, uint8_t type);
+void Compare_print(int16_t last,int16_t new, uint8_t type);
 #define BAT 0
 /* USER CODE END EFP */
 
@@ -87,6 +87,7 @@ void Compare_print(uint8_t last,uint8_t new, uint8_t type);
 /* USER CODE BEGIN Private defines */
 #define WAIT_VIEW 2000	//Espero 2000 ms
 #define LOW_LIMIT -3000	//Espero 2000 ms
+
 
 enum state {WELCOME, WEIGHTHING, CALIBRATE, TARE, PRICE, PC, MENU, CALIB_KEY, PRICE_KEY, PRICE_VIEW};
 

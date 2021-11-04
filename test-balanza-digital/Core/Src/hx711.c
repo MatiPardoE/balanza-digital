@@ -42,7 +42,7 @@ void HX711_set_scale_g(double value_scale_g){
 }
 
 void HX711_tare(uint8_t prom){
-	uint8_t i;
+	uint8_t i = 0;
 	int32_t value = 0;
 
 	PD_SCK_SET_LOW;
@@ -155,51 +155,7 @@ int32_t HX711_read_raw(void){
 	}
 
 }
-/*
-int32_t HX711_read_raw(void)
-{
-    int32_t value=0;
-    uint8_t i;
-	// wait for the chip to become ready
-	while (HX711_is_ready());
 
-
-	delay_us(1);
-
-    PD_SCK_SET_LOW;
-
-    delay_us(1);
-
-    for(i=0;i<24;i++)
-    {
-        PD_SCK_SET_HIGH;
-        delay_us(1);
-
-        value = value << 1;  //Shift MSB to the left
-
-        if(DOUT_READ){
-                	value+=1;
-        }
-
-        PD_SCK_SET_LOW;
-        delay_us(1);
-
-
-    }
-    //value = value>>6;		//Divido la muestra por 2^6=64 para tener mas estabilidad
-
-    PD_SCK_SET_HIGH;
-    delay_us(1);
-
-    if(value & 0x800000){
-    	value |= 0xff000000;  //Si es negativo lo retorno con signo de 32 bits
-    }
-
-    PD_SCK_SET_LOW;
-
-    return(value);
-}
-*/
 int32_t HX711_read_average_raw(uint8_t prom){
 	int32_t current_value;
 	int32_t sum = 0;

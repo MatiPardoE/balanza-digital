@@ -158,7 +158,7 @@ int main(void) {
 	ticks_adc = HAL_GetTick();					// Variable para ADC
 
 	/* Lectura calibraciones anteriores	*/
-	//guardarCalibracion(0.00074214855); //ESTO NO VA, falta poner la pila y que se lo acuerde.
+	guardarCalibracion(0.00074214855); //ESTO NO VA, falta poner la pila y que se lo acuerde.
 	HX711_set_scale_g(obtenerCalibracion());
 
 
@@ -169,29 +169,23 @@ int main(void) {
 
 		Measure_battery(); 		// Toma muestras cada 5s y lo promedia
 		key = read_keypad();
-		if (key == 10) {
-			s = MENU;
-			//SSD1306_Clear();	//Limpio OLED
-		}
 
 		switch (s) {
 		case WELCOME:
-			//printoled_start();
-			HX711_tare(40);	//TARO LA BASE PARA EL OFFSET
+			printoled_start();
+			HX711_tare(40);	//Tarado bloqueante
 			s = WEIGHTHING;
-			//SSD1306_Clear();	//Limpio OLED
+			SSD1306_Clear();	//Limpio OLED
 			break;
 
 		case MENU:
-			//printoled_menu();
 			Compare_print(last_bat, charge_por, BAT);
-			if (key > WELCOME && key < MENU) { //LA TECLA QUE SE TOCA ME MUEVE
-				s = key;
-				//SSD1306_Clear();	//Limpio OLED
-				if (key == CALIBRATE)
-					//printoled_calibrate(0);
-				if (key == PRICE)
-					//printoled_calibrate(2);
+			if (key > WELCOME && key < MENU) {
+				s = key;	//LA TECLA QUE SE TOCA ME MUEVE
+				SSD1306_Clear();	//Limpio OLED
+				if (key == CALIBRATE) printoled_calibrate(0);
+
+				if (key == PRICE) printoled_calibrate(2);
 				tick_main = HAL_GetTick();
 			}
 
@@ -203,42 +197,51 @@ int main(void) {
 				Compare_print(last_w, new_w, WEIGHTHING);
 				last_w = new_w;
 			}
+			if (key == 10) {
+				s=MENU;
+				SSD1306_Clear();
+				printoled_menu();
+			}
 
 			break;
 
 		case CALIBRATE:
-			if (HAL_GetTick() - tick_main > WAIT_VIEW) {
-				s = CALIB_KEY;
-				//SSD1306_Clear();	//Limpio OLED
-				tick_main = HAL_GetTick();
-			}
-			break;
-
-		case CALIB_KEY:
 			if (key != 0) {
 				if (key != 12) {
-					calib_val *= 10;
-					if (key == 11) key = 0;
-					calib_val += key;
-					//printoled_number(key);
+					if (key == 10) {
+						calib_val /= 10;
+					} else {
+						calib_val *= 10;
+						if (key == 11)
+							key = 0;
+						calib_val += key;
+					}
+
+					SSD1306_Clear();	//Limpio OLED
+					printoled_weight(calib_val, 0);
 				} else {
 					guardarCalibracion(HX711_calib(calib_val));
 					calib_val=0;
-					//printoled_calibrate(1);
-					s = MENU;
+					printoled_calibrate(1);
+					s = WEIGHTHING;
+
 				}
+
 			}
 
 
 			break;
 		case TARE:
-
+			printoled_tare();
+			HX711_tare(40);
+			s = WEIGHTHING;
+			last_w = -5000 ; //Modificamos para que reimprima la primera vez
 			break;
 
 		case PRICE:
 			if (HAL_GetTick() - tick_main > WAIT_VIEW) {
 				s = PRICE_KEY;
-				//SSD1306_Clear();	//Limpio OLED
+				SSD1306_Clear();	//Limpio OLED
 				tick_main = HAL_GetTick();
 			}
 
@@ -250,9 +253,9 @@ int main(void) {
 					if (key == 11)
 						key = 0;
 					calib_val += key;
-					//printoled_number(key);
+					printoled_number(key);
 				} else {
-					//printoled_price(calib_val * last_w);
+					printoled_price(calib_val * last_w);
 					s = PRICE_VIEW;
 					tick_main = HAL_GetTick();
 				}
@@ -263,7 +266,7 @@ int main(void) {
 		case PRICE_VIEW:
 			if (HAL_GetTick() - tick_main > WAIT_VIEW) {
 				s = PRICE;
-				//SSD1306_Clear();	//Limpio OLED
+				SSD1306_Clear();	//Limpio OLED
 				tick_main = HAL_GetTick();
 			}
 			break;
@@ -534,7 +537,7 @@ static void MX_GPIO_Init(void) {
  * \return 	: void
  * */
 void Init_balanza(void) {
-	//SSD1306_Init(); 								// INICIALIZACION OLED
+	SSD1306_Init(); 								// INICIALIZACION OLED
 
 	debounce_init(&deb_col_1, 1, DEBOUNCE_TICKS); 	//Incializo teclado
 	debounce_init(&deb_col_2, 1, DEBOUNCE_TICKS);
@@ -545,14 +548,14 @@ void Init_balanza(void) {
 
 }
 
-void Compare_print(uint8_t last, uint8_t new, uint8_t type) {
+void Compare_print(int16_t last, int16_t new, uint8_t type) {
 	if (new != last) {
 		last = new;
-		//SSD1306_Clear();	//Limpio OLED
+		SSD1306_Clear();	//Limpio OLED
 		if (type == WEIGHTHING) {
-			//printoled_weight(last, 0);
+			printoled_weight(last, 0);
 		} else {
-			//printoled_battery(last);
+			printoled_battery(last);
 		}
 	}
 }
