@@ -32,6 +32,7 @@
 #include "oled_balanza.h"
 #include "hx711.h"
 #include "register.h"
+#include "usb_balanza.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -97,6 +98,9 @@ uint8_t last_bat = 0;		// DEBE SER LOCAL
 uint8_t charge_por; 		// DEBE SER LOCAL, sería new_bat
 uint16_t calib_val = 0;		// DEBE SER LOCAL
 //uint8_t new_bat = 4;		// DEBE SER LOCAL
+uint8_t flag_pc_ready,flag_pc_tare,flag_pc_calib,flag_pc_disconected,flag_weight_qt; //DEBE SER GLOBAL
+uint16_t weight_qt;
+
 // END VARIABLE KEYPAD
 
 // START VARIABLE ADC
@@ -190,6 +194,8 @@ int main(void)
 
 				if (key == PRICE) printoled_calibrate(2);
 				tick_main = HAL_GetTick();
+
+				if(key == PC)printoled_PC(0);
 			}
 
 			break;
@@ -275,7 +281,31 @@ int main(void)
 			break;
 
 		case PC:
-
+			new_w = HX711_read_g();
+			if (new_w > LOW_LIMIT) {
+				Compare_print(last_w, new_w, PC);
+				last_w = new_w;
+			}
+			if(flag_pc_tare){
+				flag_pc_tare = 0;
+				HX711_tare(40);
+			}
+			if(flag_pc_calib && flag_weight_qt){
+				flag_weight_qt = 0 ;
+				flag_pc_calib = 0;
+				guardarCalibracion(HX711_calib(weight_qt));
+			}
+			if(flag_pc_ready){
+				flag_pc_ready = 0;
+				SSD1306_Clear();
+				printoled_PC(1);
+			}
+			if (flag_pc_disconected) {
+				flag_pc_disconected = 0;
+				s = MENU;
+				SSD1306_Clear();
+				printoled_menu();
+			}
 			break;
 
 		default:
@@ -564,16 +594,24 @@ void Init_balanza(void) {
 	HAL_ADCEx_Calibration_Start(&hadc1);			// Calibro interno ADC
 	Inicializar_avg_movil(bat_buffer, &bat_index, bat_len, &bat_acc);// Inicializo filtro media movil
 
+	usb_balanza_init(); //Asigno Hook Rx
 }
 
 void Compare_print(int16_t last, int16_t new, uint8_t type) {
 	if (new != last) {
 		last = new;
-		SSD1306_Clear();	//Limpio OLED
-		if (type == WEIGHTHING) {
+		switch(type){
+		case WEIGHTHING:
+			SSD1306_Clear();	//Limpio OLED
 			printoled_weight(last, 0);
-		} else {
+			break;
+		case MENU:
+			SSD1306_Clear();	//Limpio OLED
 			printoled_battery(last);
+			break;
+		case PC:
+			serial_tx_num(last);
+			break;
 		}
 	}
 }
