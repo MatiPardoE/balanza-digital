@@ -94,7 +94,7 @@ uint8_t key = 0;			// DEBE SER LOCAL
 enum state s = WELCOME;	// DEBE SER LOCAL
 int32_t new_w = 0;			// DEBE SER LOCAL
 int32_t last_w = -1;		// DEBE SER LOCAL
-uint8_t last_bat = 0;		// DEBE SER LOCAL
+uint8_t last_bat = 255;		// DEBE SER LOCAL
 uint8_t charge_por; 		// DEBE SER LOCAL, sería new_bat
 uint16_t calib_val = 0;		// DEBE SER LOCAL
 //uint8_t new_bat = 4;		// DEBE SER LOCAL
@@ -165,7 +165,7 @@ int main(void)
 	ticks_adc = HAL_GetTick();					// Variable para ADC
 
 	/* Lectura calibraciones anteriores	*/
-	guardarCalibracion(0.00074214855); //ESTO NO VA, falta poner la pila y que se lo acuerde.
+	//guardarCalibracion(0.00074214855); //ESTO NO VA, falta poner la pila y que se lo acuerde.
 	HX711_set_scale_g(obtenerCalibracion());
 
 
@@ -186,7 +186,8 @@ int main(void)
 			break;
 
 		case MENU:
-			Compare_print(last_bat, charge_por, BAT);
+			Compare_print(last_bat, charge_por, MENU);
+			last_bat = charge_por;
 			if (key > WELCOME && key < MENU) {
 				s = key;	//LA TECLA QUE SE TOCA ME MUEVE
 				SSD1306_Clear();	//Limpio OLED
@@ -606,7 +607,7 @@ void Compare_print(int16_t last, int16_t new, uint8_t type) {
 			printoled_weight(last, 0);
 			break;
 		case MENU:
-			SSD1306_Clear();	//Limpio OLED
+			//SSD1306_Clear();	//Limpio OLED
 			printoled_battery(last);
 			break;
 		case PC:
