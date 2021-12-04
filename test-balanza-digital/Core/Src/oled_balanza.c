@@ -86,15 +86,15 @@ void printoled_menu() {
 }
 
 /**
- * \fn 		: void printoled_calibrate(int text)
+ * \fn 		: void printoled_msg(int text)
  * \brief 	: Imprime los textos de calibracion
- * \details : 0 = Ingrese calib, 1 = Calib Finalizada
+ * \details : 0 = Ingrese calib, 1 = Calib Finalizada, 2 = Ingresar precio
  * \author 	: Gaston Cebreiro
  * \date   	: 09/09/2021
  * \param 	: [in] int text
  * \return 	: none
  * */
-void printoled_calibrate(int text) {
+void printoled_msg(int text) {
 	if (text == 0) {
 		SSD1306_GotoXY(20, 10);
 		SSD1306_Puts("Ingrese", &Font_11x18, 1);
@@ -108,9 +108,9 @@ void printoled_calibrate(int text) {
 		SSD1306_Puts("Finalizada", &Font_11x18, 1);
 		SSD1306_UpdateScreen();
 	} else if (text == 2) {
-		SSD1306_GotoXY(0, 10);
+		SSD1306_GotoXY(20, 10);
 		SSD1306_Puts("Ingrese", &Font_11x18, 1);
-		SSD1306_GotoXY(5, 30);
+		SSD1306_GotoXY(25, 30);
 		SSD1306_Puts("Precio", &Font_11x18, 1);
 		SSD1306_UpdateScreen();
 	}
@@ -252,19 +252,22 @@ void printoled_number(int number) {
 }
 
 /**
- * \fn 		: void printoled_price(int price)
- * \brief 	: Imprime el precio
- * \details : Incluye el simbolo $
+ * \fn 		: void printoled_price(float price, int mode)
+ * \brief 	: Imprime el precio inclyendo valor con coma
+ * \details : Incluye el simbolo $ y si modo es 0 no presenta coma
  * \author 	: Gaston Cebreiro
  * \date   	: 09/09/2021
- * \param 	: [in] int price
+ * \param 	: [in] float price
+ * \param 	: [in] int mode
  * \return 	: none
  * */
-void printoled_price(int price) {
+void printoled_price(float price, int mode) {
 	int i, p, digits;
 	int div = 1;
-	digits = count_digits(price);
-	char price_shown[digits + 1];
+	if(mode)
+		price = price*10;
+	digits = count_digits( (int)(price) );
+	char price_shown[digits + 1 + mode];
 
 	if (digits > 1) {
 		for (i = 1; i < digits; i++)
@@ -273,31 +276,19 @@ void printoled_price(int price) {
 	/* ESTA VERSION ES CON EL SIGNO PESOS MAS CHICO PERO SE VE MEJOR*/
 	SSD1306_GotoXY(52 - 8 * digits, 23);
 	SSD1306_Putc('$', &Font_11x18, 1);
-	for (i = 0; i < digits; i++) {
-		p = (price / div);
-		price_shown[i] = p + '0';
-		price -= p * div;
-		div /= 10;
+	for (i = 0 ; i < (digits+mode) ; i++) {
+		if(i == (digits-1) && mode == 1 ){
+			price_shown[i] = ',';
+		}else{
+			p = (price / div);
+			price_shown[i] = p + '0';
+			price -= p * div;
+				div /= 10;
+		}
 	}
 	price_shown[i] = '\0';
 
 	SSD1306_GotoXY(65 - 8 * digits, 20);
 	SSD1306_Puts(price_shown, &Font_16x26, 1);
-	/**/
-	/*//ESTA VERSION ES CON EL SIGNO PESOS GRANDE PERO SE VE FEO
-	 price_shown[0] = '$';
-	 for(i=1 ; i<=digits ; i++)
-	 {
-	 p = (price/div);
-	 price_shown[i] = p + '0';
-	 price -= p*div;
-	 div /= 10;
-	 }
-	 price_shown[i] = '\0';
-
-	 SSD1306_GotoXY(60-8*digits,20);
-	 SSD1306_Puts(price_shown, &Font_16x26, 1);
-	 */
-
 	SSD1306_UpdateScreen();
 }

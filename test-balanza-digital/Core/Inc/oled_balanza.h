@@ -22,11 +22,9 @@ void printoled_start();
 
 void printoled_number(int number);
 
-void printoled_calibrate(int text);
+void printoled_msg(int text);
 
-void printoled_price(int price);
-
-void printoled_calibrate(int text);
+void printoled_price(float price, int mode);
 
 void printoled_PC(int text);
 

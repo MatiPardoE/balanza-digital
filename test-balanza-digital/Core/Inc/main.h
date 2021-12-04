@@ -86,10 +86,11 @@ void Compare_print(int16_t last,int16_t new, uint8_t type);
 #define COL_3_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
 #define WAIT_VIEW 2000	//Espero 2000 ms
-#define LOW_LIMIT -3000	//Espero 2000 ms
+#define LOW_LIMIT -3000
+#define UNVALID_VALUE   -5000
 
 
-enum state {WELCOME, WEIGHTHING, CALIBRATE, TARE, PRICE, PC, MENU, CALIB_KEY, PRICE_KEY, PRICE_VIEW};
+enum state {WELCOME, WEIGHTHING, CALIBRATE, TARE, PRICE, PC, MENU, CALIB_KEY, PRICE_VIEW};
 
 /* USER CODE END Private defines */
 

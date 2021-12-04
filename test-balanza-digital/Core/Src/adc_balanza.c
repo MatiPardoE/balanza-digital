@@ -97,13 +97,13 @@ uint16_t Set_avg_movil(uint16_t sample, uint32_t *buffer, uint8_t *ix, uint8_t l
  * \return 	: valor de la carga
  * */
 uint8_t Check_porcentage(uint16_t *now_cuentas) {
-	if (*now_cuentas < 2110)
+	if (*now_cuentas < 1985)
 		return (0);
-	else if (*now_cuentas < 2220)
+	else if (*now_cuentas < 2234)
 		return (1);
-	else if (*now_cuentas < 2330)
+	else if (*now_cuentas < 2482)
 		return (2);
-	else if (*now_cuentas < 2440)
+	else if (*now_cuentas < 2730)
 		return (3);
 	else
 		return (4);
@@ -120,10 +120,10 @@ uint8_t Check_porcentage(uint16_t *now_cuentas) {
  * \param	: void
  * \param 	: void
  * \param 	: void
- * \return 	: void
+ * \return 	: int16_t
  * */
 
-void Measure_battery(void) {
+int16_t Measure_battery(void) {
 	if ((HAL_GetTick() - ticks_adc) >= TICKS_ADC_MS) {
 		ticks_adc = HAL_GetTick();
 		HAL_ADC_Start(&hadc1);
@@ -135,6 +135,7 @@ void Measure_battery(void) {
 		//HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 		bat_avg = Set_avg_movil(cuentas_adc, bat_buffer, &bat_index,
 		bat_len, &bat_acc);
-		charge_por = Check_porcentage(&bat_avg);
+		return Check_porcentage(&bat_avg);
 	}
+	return UNVALID_VALUE;
 }

@@ -42,6 +42,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -94,18 +95,18 @@ uint8_t key = 0;			// DEBE SER LOCAL
 enum state s = WELCOME;	// DEBE SER LOCAL
 int32_t new_w = 0;			// DEBE SER LOCAL
 int32_t last_w = -1;		// DEBE SER LOCAL
-uint8_t last_bat = 255;		// DEBE SER LOCAL
-uint8_t charge_por; 		// DEBE SER LOCAL, sería new_bat
+int16_t last_bat = 255;		// DEBE SER LOCAL
+int16_t charge_por; 		// DEBE SER LOCAL, sería new_bat
 uint16_t calib_val = 0;		// DEBE SER LOCAL
 //uint8_t new_bat = 4;		// DEBE SER LOCAL
-uint8_t flag_pc_ready,flag_pc_tare,flag_pc_calib,flag_pc_disconected,flag_weight_qt; //DEBE SER GLOBAL
+uint8_t flag_print,flag_pc_ready,flag_pc_tare,flag_pc_calib,flag_pc_disconected,flag_weight_qt; //DEBE SER GLOBAL
 uint16_t weight_qt;
 
 // END VARIABLE KEYPAD
 
 // START VARIABLE ADC
 uint16_t bat_avg;	//! Es el promedio de muestras
-uint8_t charge_por; //! Variable global para la medicion de bateria
+int16_t charge_por; //! Variable global para la medicion de bateria
 
 extern uint32_t ticks_adc;				//! Uso interno para hacer pooling
 extern uint16_t cuentas_adc;			//! Uso interno para convertir
@@ -165,54 +166,60 @@ int main(void)
 	ticks_adc = HAL_GetTick();					// Variable para ADC
 
 	/* Lectura calibraciones anteriores	*/
-	//guardarCalibracion(0.00074214855); //ESTO NO VA, falta poner la pila y que se lo acuerde.
 	HX711_set_scale_g(obtenerCalibracion());
-
-
 
 	tick_main = HAL_GetTick();
 
 	while (1) {
-
-		Measure_battery(); 		// Toma muestras cada 5s y lo promedia
 		key = read_keypad();
+
+		charge_por = Measure_battery(); 		// Toma muestras cada 5s y lo promedia
+		if((charge_por != UNVALID_VALUE) && (charge_por != last_bat)){
+			last_bat = charge_por;
+		}
+
+		new_w = HX711_read_g(); // pesamos todo el tiempo y no solo en WEIGHTHING
+		if ((new_w > LOW_LIMIT) && (last_w != new_w)){
+			flag_print = 1;
+			last_w = new_w;
+		}
 
 		switch (s) {
 		case WELCOME:
 			printoled_start();
 			HX711_tare(40);	//Tarado bloqueante
 			s = WEIGHTHING;
-			SSD1306_Clear();	//Limpio OLED
+			SSD1306_Clear();
 			break;
 
 		case MENU:
-			Compare_print(last_bat, charge_por, MENU);
-			last_bat = charge_por;
 			if (key > WELCOME && key < MENU) {
 				s = key;	//LA TECLA QUE SE TOCA ME MUEVE
-				SSD1306_Clear();	//Limpio OLED
-				if (key == CALIBRATE) printoled_calibrate(0);
+				SSD1306_Clear();
 
-				if (key == PRICE) printoled_calibrate(2);
+				if (key == CALIBRATE) printoled_msg(0);
+
+				if (key == PRICE) printoled_msg(2);
+
 				tick_main = HAL_GetTick();
 
-				if(key == PC)printoled_PC(0);
+				if(key == PC) printoled_PC(0);
 			}
 
 			break;
 
 		case WEIGHTHING:
-			new_w = HX711_read_g();
-			if (new_w > LOW_LIMIT){
-				Compare_print(last_w, new_w, WEIGHTHING);
-				last_w = new_w;
+			if (flag_print){
+				SSD1306_Clear();
+				printoled_weight(last_w, 0);
+				flag_print = 0;
 			}
 			if (key == 10) {
-				s=MENU;
+				s = MENU;
 				SSD1306_Clear();
 				printoled_menu();
+				printoled_battery(last_bat);
 			}
-
 			break;
 
 		case CALIBRATE:
@@ -226,66 +233,59 @@ int main(void)
 							key = 0;
 						calib_val += key;
 					}
-
-					SSD1306_Clear();	//Limpio OLED
+					SSD1306_Clear();
 					printoled_weight(calib_val, 0);
 				} else {
+					printoled_msg(1);
 					guardarCalibracion(HX711_calib(calib_val));
-					calib_val=0;
-					printoled_calibrate(1);
+					calib_val = 0;
 					s = WEIGHTHING;
-
 				}
-
 			}
-
 
 			break;
 		case TARE:
 			printoled_tare();
 			HX711_tare(40);
 			s = WEIGHTHING;
-			last_w = -5000 ; //Modificamos para que reimprima la primera vez
+			last_w = 0; // Modificamos para que reimprima la primera vez
 			break;
 
 		case PRICE:
-			if (HAL_GetTick() - tick_main > WAIT_VIEW) {
-				s = PRICE_KEY;
-				SSD1306_Clear();	//Limpio OLED
-				tick_main = HAL_GetTick();
-			}
-
-			break;
-		case PRICE_KEY:
 			if (key != 0) {
 				if (key != 12) {
-					calib_val *= 10;
-					if (key == 11)
-						key = 0;
-					calib_val += key;
-					printoled_number(key);
+					if (key == 10) {
+						calib_val /= 10;
+					}else{
+						calib_val *= 10;
+						if (key == 11)
+							key = 0;
+						calib_val += key;
+					}
+					SSD1306_Clear();
+					printoled_price(calib_val, 0);
 				} else {
-					printoled_price(calib_val * last_w);
+					SSD1306_Clear();
+					printoled_price((calib_val*last_w)/1000.0, 1);
+					calib_val = 0;
 					s = PRICE_VIEW;
 					tick_main = HAL_GetTick();
 				}
 			}
-
 			break;
 
 		case PRICE_VIEW:
-			if (HAL_GetTick() - tick_main > WAIT_VIEW) {
-				s = PRICE;
-				SSD1306_Clear();	//Limpio OLED
-				tick_main = HAL_GetTick();
+			if (key == 10) {
+				s = MENU;
+				SSD1306_Clear();
+				printoled_menu();
+				printoled_battery(last_bat);
 			}
 			break;
 
 		case PC:
-			new_w = HX711_read_g();
-			if (new_w > LOW_LIMIT) {
-				Compare_print(last_w, new_w, PC);
-				last_w = new_w;
+			if (flag_print) {
+				serial_tx_num(last_w);
 			}
 			if(flag_pc_tare){
 				flag_pc_tare = 0;
@@ -306,6 +306,13 @@ int main(void)
 				s = MENU;
 				SSD1306_Clear();
 				printoled_menu();
+				printoled_battery(last_bat);
+			}
+			if(key == 10){
+				s = MENU;
+				SSD1306_Clear();
+				printoled_menu();
+				printoled_battery(last_bat);
 			}
 			break;
 
@@ -597,7 +604,7 @@ void Init_balanza(void) {
 
 	usb_balanza_init(); //Asigno Hook Rx
 }
-
+/*
 void Compare_print(int16_t last, int16_t new, uint8_t type) {
 	if (new != last) {
 		last = new;
@@ -616,7 +623,7 @@ void Compare_print(int16_t last, int16_t new, uint8_t type) {
 		}
 	}
 }
-
+*/
 
 
 /* USER CODE END 4 */
