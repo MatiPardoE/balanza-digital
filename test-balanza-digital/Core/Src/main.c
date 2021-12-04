@@ -137,7 +137,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+   HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -285,6 +285,7 @@ int main(void)
 
 		case PC:
 			if (flag_print) {
+				flag_print = 0;
 				serial_tx_num(last_w);
 			}
 			if(flag_pc_tare){
