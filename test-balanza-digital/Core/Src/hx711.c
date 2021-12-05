@@ -194,7 +194,7 @@ int32_t HX711_read_g(){
 	int32_t weight_g;
 
 	if (value_kalman != UNVALID) {
-		weight_g = value_kalman * scale_g;
+		weight_g = round(value_kalman * scale_g);
 		return weight_g;
 	} else {
 		return UNVALID_WEIGHT;

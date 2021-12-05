@@ -10,6 +10,7 @@
 #define INC_HX711_H_
 
 #include "stm32f1xx_hal.h"
+#include <math.h>
 
 // These ports are configured in the init function HX711_init()
 // Remember to Enable GPIO Ports Clock
