@@ -39,7 +39,7 @@ void handle_serial(uint8_t b){
 			state = RX_CMD;
 		break;
 	case RX_CMD:
-		if(b == 'T' || b == 'C' || b == 'P' || b == 'D'){
+		if(b == 'T' || b == 'C' || b == 'P' || b == 'D' || b == 'L'){
 			prev_byte = b;
 			state = END_CMD;
 		} else if(b >= '0' && b <= '9'){

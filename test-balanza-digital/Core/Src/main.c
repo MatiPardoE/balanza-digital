@@ -97,7 +97,7 @@ int32_t new_w = 0;			// DEBE SER LOCAL
 int32_t last_w = -1;		// DEBE SER LOCAL
 int16_t last_bat = 255;		// DEBE SER LOCAL
 int16_t charge_por; 		// DEBE SER LOCAL, sería new_bat
-uint16_t calib_val = 0;		// DEBE SER LOCAL
+uint32_t calib_val = 0;		// DEBE SER LOCAL
 //uint8_t new_bat = 4;		// DEBE SER LOCAL
 uint8_t flag_print,flag_pc_ready,flag_pc_tare,flag_pc_calib,flag_pc_disconected,flag_weight_qt; //DEBE SER GLOBAL
 uint16_t weight_qt;
@@ -236,6 +236,7 @@ int main(void)
 					SSD1306_Clear();
 					printoled_weight(calib_val, 0);
 				} else {
+					SSD1306_Clear();
 					printoled_msg(1);
 					guardarCalibracion(HX711_calib(calib_val));
 					calib_val = 0;
@@ -310,6 +311,7 @@ int main(void)
 				printoled_battery(last_bat);
 			}
 			if(key == 10){
+				serial_tx_cmd("D");
 				s = MENU;
 				SSD1306_Clear();
 				printoled_menu();

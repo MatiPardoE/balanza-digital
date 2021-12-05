@@ -8,7 +8,7 @@
 #ifndef INC_KEYPAD_BALANZA_H_
 #define INC_KEYPAD_BALANZA_H_
 
-#define KEYPAD_TICKS	(8000)
+#define KEYPAD_TICKS	(4500)
 
 void set_row(uint8_t row);
 uint8_t read_cols(void);

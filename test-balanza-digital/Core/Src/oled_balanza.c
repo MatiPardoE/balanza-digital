@@ -262,13 +262,21 @@ void printoled_number(int number) {
  * \return 	: none
  * */
 void printoled_price(float price, int mode) {
-	int i, p, digits;
+	int p, digits;
 	int div = 1;
-	if(mode)
+	int zero = 0;
+	int i = 0;
+	if(mode){
 		price = price*10;
+	}
 	digits = count_digits( (int)(price) );
-	char price_shown[digits + 1 + mode];
+	char price_shown[digits + 2 + mode];
 
+	if(digits == 1 && mode == 1) //CASO DE 0,X
+	{
+		price_shown[i] = '0';
+		zero = 1;
+	}
 	if (digits > 1) {
 		for (i = 1; i < digits; i++)
 			div *= 10;
@@ -276,17 +284,18 @@ void printoled_price(float price, int mode) {
 	/* ESTA VERSION ES CON EL SIGNO PESOS MAS CHICO PERO SE VE MEJOR*/
 	SSD1306_GotoXY(52 - 8 * digits, 23);
 	SSD1306_Putc('$', &Font_11x18, 1);
+
 	for (i = 0 ; i < (digits+mode) ; i++) {
 		if(i == (digits-1) && mode == 1 ){
-			price_shown[i] = ',';
+			price_shown[i+zero] = ',';
 		}else{
 			p = (price / div);
-			price_shown[i] = p + '0';
+			price_shown[i+zero] = p + '0';
 			price -= p * div;
 				div /= 10;
 		}
 	}
-	price_shown[i] = '\0';
+	price_shown[i+zero] = '\0';
 
 	SSD1306_GotoXY(65 - 8 * digits, 20);
 	SSD1306_Puts(price_shown, &Font_16x26, 1);
