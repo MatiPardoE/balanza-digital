@@ -249,7 +249,7 @@ int main(void)
 			printoled_tare();
 			HX711_tare(40);
 			s = WEIGHTHING;
-			last_w = 0; // Modificamos para que reimprima la primera vez
+			last_w = -3001; // Modificamos para que reimprima la primera vez
 			break;
 
 		case PRICE:

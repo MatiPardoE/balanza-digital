@@ -36,19 +36,12 @@
 
 enum state_read {WAIT_RDY, SET_PD_SCK_LOW, SET_PD_SCK_HIGH, READ_CELL, HX711_END_HIGH, HX711_END_LOW};
 
-
-	 void delay_us (uint32_t us);
-
-	// check if HX711 is ready
-	// from the datasheet: When output data is not ready for retrieval, digital output pin DOUT is high. Serial clock
-	// input PD_SCK should be low. When DOUT goes to low, it indicates data is ready for retrieval.
 	uint8_t HX711_is_ready(void);
 
 	uint32_t HX711_get_offset(void);
 
 	void HX711_set_scale_g(double value_scale_g);
 
-	// waits for the chip to be ready and returns a reading
 	int32_t HX711_read_raw(void);
 
 	int32_t HX711_read_average_raw(uint8_t prom);
@@ -61,6 +54,5 @@ enum state_read {WAIT_RDY, SET_PD_SCK_LOW, SET_PD_SCK_HIGH, READ_CELL, HX711_END
 
 	double HX711_calib(uint16_t calib_weight);
 
-	void HX711_calib_harcodeado(void);
 
 #endif /* INC_HX711_H_ */
